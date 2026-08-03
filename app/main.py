@@ -1,4 +1,7 @@
 from fastapi import FastAPI
+from .database import Base,engine
+from . import models
+from .routes import router
 
 app=FastAPI(
     title="PDF Report Generator API",
@@ -13,6 +16,10 @@ Feature:
 """,
     version="1.0.0"
 )
+
+Base.metadata.create_all(bind=engine)
+
+app.include_router(router)
 
 @app.get(
     "/",
