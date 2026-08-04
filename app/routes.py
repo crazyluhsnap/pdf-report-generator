@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from fastapi.responses import FileResponse
@@ -185,9 +185,12 @@ def get_report_summary(
 
 
 @router.get(
-    "/reports/pdf"
+    "/reports/pdf",
+    summary="Generate and download PDF report"
 )
-def generate_report(db: Session = Depends(get_db)):
+def generate_report(
+    db: Session = Depends(get_db)
+    ):
     summary_data=get_summary_data(db)
     filepath=generate_pdf_report(summary_data)
 
@@ -196,3 +199,23 @@ def generate_report(db: Session = Depends(get_db)):
         filename="student_report.pdf",
         media_type="application/pdf"
     )
+
+
+@router.post(
+    "/reports/generate",
+    summary="Generate report in background"
+)
+def generate_report_background(
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    summary_data = get_summary_data(db)
+
+    background_tasks.add_task(
+        generate_pdf_report,
+        summary_data
+    )
+
+    return {
+        "message": "Report generation started in the background."
+    }
