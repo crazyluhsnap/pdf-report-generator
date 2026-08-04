@@ -117,11 +117,8 @@ The project demonstrates commonly used SQL aggregate functions through SQLAlchem
 
 ## 📄 Sample PDF Report
 
-*(Add a screenshot here after uploading it.)*
+<img width="792" height="576" alt="image" src="https://github.com/user-attachments/assets/c71823c3-f538-42ad-8939-de2a6737585f" />
 
-```md
-![PDF Report](images/pdf-report.png)
-```
 
 ---
 
