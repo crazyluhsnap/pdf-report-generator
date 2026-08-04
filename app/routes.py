@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from fastapi.responses import FileResponse
 
 from . import models,schemas
 from .database import SessionLocal
+from .report_generator import generate_pdf_report
 
 router=APIRouter()
 
@@ -15,75 +17,7 @@ def get_db():
         db.close()
 
 
-@router.post(
-    "/students",
-    response_model=schemas.StudentResponse,
-    status_code=201,
-    summary="Create a new student"
-)
-def create_student(
-    student: schemas.StudentCreate,
-    db: Session=Depends(get_db)
-):
-    new_student=models.Student(
-        name=student.name,
-        department=student.department,
-        semester=student.semester,
-        math=student.math,
-        science=student.science,
-        english=student.english,
-        attendance=student.attendance
-    )
-
-    db.add(new_student)
-    db.commit()
-    db.refresh(new_student)
-
-    return new_student
-
-
-@router.get(
-    "/students",
-    response_model=list[schemas.StudentResponse],
-    summary="Get all students"
-)
-def get_students(
-    db:Session=Depends(get_db)
-):
-    students=db.query(models.Student).all()
-
-    return students
-
-
-@router.get(
-    "/students/{student_id}",
-    response_model=schemas.StudentResponse,
-    summary="Get student by ID"
-)
-def get_student(
-    student_id:int,
-    db:Session=Depends(get_db)
-):
-    student=db.query(models.Student).filter(
-        models.Student.id==student_id
-    ).first()
-
-    if student is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Student not found"
-        )
-
-    return student
-
-
-@router.get(
-    "/reports/summary",
-    summary="Get report summary"
-)
-def get_report_summary(
-    db: Session=Depends(get_db)
-):
+def get_summary_data(db: Session):
     total_students=db.query(
         func.count(models.Student.id)
     ).scalar()
@@ -171,7 +105,94 @@ def get_report_summary(
         "total_english_marks": total_english_marks,
 
         "average_attendance": average_attendance,
-        "highest_attendace": highest_attendance,
+        "highest_attendance": highest_attendance,
         "lowest_attendance": lowest_attendance
     }
 
+
+
+
+@router.post(
+    "/students",
+    response_model=schemas.StudentResponse,
+    status_code=201,
+    summary="Create a new student"
+)
+def create_student(
+    student: schemas.StudentCreate,
+    db: Session=Depends(get_db)
+):
+    new_student=models.Student(
+        name=student.name,
+        department=student.department,
+        semester=student.semester,
+        math=student.math,
+        science=student.science,
+        english=student.english,
+        attendance=student.attendance
+    )
+
+    db.add(new_student)
+    db.commit()
+    db.refresh(new_student)
+
+    return new_student
+
+
+@router.get(
+    "/students",
+    response_model=list[schemas.StudentResponse],
+    summary="Get all students"
+)
+def get_students(
+    db:Session=Depends(get_db)
+):
+    students=db.query(models.Student).all()
+
+    return students
+
+
+@router.get(
+    "/students/{student_id}",
+    response_model=schemas.StudentResponse,
+    summary="Get student by ID"
+)
+def get_student(
+    student_id:int,
+    db:Session=Depends(get_db)
+):
+    student=db.query(models.Student).filter(
+        models.Student.id==student_id
+    ).first()
+
+    if student is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Student not found"
+        )
+
+    return student
+
+
+@router.get(
+    "/reports/summary",
+    summary="Get report summary"
+)
+def get_report_summary(
+    db: Session=Depends(get_db)
+):
+    return get_summary_data(db)
+
+
+@router.get(
+    "/reports/pdf"
+)
+def generate_report(db: Session = Depends(get_db)):
+    summary_data=get_summary_data(db)
+    filepath=generate_pdf_report(summary_data)
+
+    return FileResponse(
+        path=filepath,
+        filename="student_report.pdf",
+        media_type="application/pdf"
+    )
