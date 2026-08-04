@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from . import models,schemas
 from .database import SessionLocal
@@ -74,4 +75,103 @@ def get_student(
         )
 
     return student
+
+
+@router.get(
+    "/reports/summary",
+    summary="Get report summary"
+)
+def get_report_summary(
+    db: Session=Depends(get_db)
+):
+    total_students=db.query(
+        func.count(models.Student.id)
+    ).scalar()
+
+    average_math=db.query(
+        func.avg(models.Student.math)
+    ).scalar()
+
+    average_science=db.query(
+        func.avg(models.Student.science)
+    ).scalar()
+
+    average_english=db.query(
+        func.avg(models.Student.english)
+    ).scalar()
+
+    average_attendance=db.query(
+        func.avg(models.Student.attendance)
+    ).scalar()
+
+
+    highest_math=db.query(
+        func.max(models.Student.math)
+    ).scalar()
+    
+    highest_science=db.query(
+        func.max(models.Student.science)
+    ).scalar()
+    
+    highest_english=db.query(
+        func.max(models.Student.english)
+    ).scalar()
+    
+    highest_attendance=db.query(
+        func.max(models.Student.attendance)
+    ).scalar()
+
+
+    lowest_math=db.query(
+        func.min(models.Student.math)
+    ).scalar()
+    
+    lowest_science=db.query(
+        func.min(models.Student.science)
+    ).scalar()
+    
+    lowest_english=db.query(
+        func.min(models.Student.english)
+    ).scalar()
+    
+    lowest_attendance=db.query(
+        func.min(models.Student.attendance)
+    ).scalar()
+
+
+    total_math_marks=db.query(
+        func.sum(models.Student.math)
+    ).scalar()
+    
+    total_science_marks=db.query(
+        func.sum(models.Student.science)
+    ).scalar()
+    
+    total_english_marks=db.query(
+        func.sum(models.Student.english)
+    ).scalar()
+
+
+    return {
+        "total_students": total_students,
+
+        "average_math": average_math,
+        "highest_math": highest_math,
+        "lowest_math": lowest_math,
+        "total_math_marks": total_math_marks,
+
+        "average_science": average_science,
+        "highest_science": highest_science,
+        "lowest_science": lowest_science,
+        "total_science_marks": total_science_marks,
+
+        "average_english": average_english,
+        "highest_english": highest_english,
+        "lowest_english": lowest_english,
+        "total_english_marks": total_english_marks,
+
+        "average_attendance": average_attendance,
+        "highest_attendace": highest_attendance,
+        "lowest_attendance": lowest_attendance
+    }
 
